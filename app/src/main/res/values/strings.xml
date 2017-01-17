@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">HistoryClassContentProvider</string>
+    <string name="action_settings">settings</string>
+</resources>
