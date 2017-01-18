@@ -1,12 +1,22 @@
 package com.example.jonat.historyclasscontentprovider;
 
-import android.app.Fragment;
-import android.app.LoaderManager;
-import android.content.Loader;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.GridView;
+
+import com.example.jonat.historyclasscontentprovider.data.ContentContract;
 
 /**
  * Created by jonat on 1/17/2017.
@@ -63,25 +73,89 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
         if(cursor.getCount() == 0){
             insertData();
         }
+        //initialize loader
         getLoaderManager().initLoader(CURSOR_LOADER_ID, null, this);
         super.onActivityCreated(savedInstanceState);
     }
 
-    private void insertData() {
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+        //inflate fragment_main layout
+        final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
+        //initialize our ImageAdapter
+        itemsAdapter = new ItemsAdapter(getActivity(), null, 0, CURSOR_LOADER_ID);
+        //initialize mGridview to the gridView in the fragment_main.xml
+
+        mGridView = (GridView) rootView.findViewById(R.id.flavors_grid);
+
+        mGridView.setAdapter(itemsAdapter);
+
+        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                //increment the position to match Database ids indexed starting at 1
+                int uriId = position + 1;
+                //append Id to uri
+
+                Uri uri = ContentUris.withAppendedId(ContentContract.ContentEntry.CONTENT_URI,
+                        uriId);
+
+                //create fragment
+                DetailFragment detailFragment = DetailFragment.newInstance(uriId, uri);
+                getActivity().getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, detailFragment)
+                        .addToBackStack(null).commit();
+
+
+            }
+        });
+
+        return rootView;
     }
 
+    public void insertData() {
+        ContentValues[] items = new ContentValues[flavors.length];
+        //Loop through static array of flavors, add each to an instance
+        //in the array of ContentValues
+        for(int i = 0; i < flavors.length; i++){
+            items[i] = new ContentValues();
+            items[i].put(ContentContract.ContentEntry.COLUMN_ICON, flavors[i].image);
+            items[i].put(ContentContract.ContentEntry.COLUMN_VERSION_NAME, flavors[i].name);
+            items[i].put(ContentContract.ContentEntry.COLUMN_DESCRIPTION, flavors[i].description);
+        }
+
+        //bulkInsert out ContentValues.
+        getActivity().getContentResolver().bulkInsert(ContentContract.ContentEntry.CONTENT_URI,
+                items);
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+    }
+
+    //Attach loader to our items database query
+    //run when loader is initialized.
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return null;k
+        return new CursorLoader(getActivity(),
+                ContentContract.ContentEntry.CONTENT_URI,
+                null,
+                null,
+                null,
+                null);
     }
 
+    //Set the cursor in our CursorAdapter once the Cursor is loaded
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-
+        itemsAdapter.swapCursor(data);
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-
+        itemsAdapter.swapCursor(null);
     }
 }

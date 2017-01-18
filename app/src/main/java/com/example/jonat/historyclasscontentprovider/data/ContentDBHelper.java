@@ -1,4 +1,4 @@
-package com.example.jonat.historyclasscontentprovider;
+package com.example.jonat.historyclasscontentprovider.data;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -27,7 +27,7 @@ public class ContentDBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         final String SQL_CREATE_ITEMS_TABLE = "CREATE TABLE " +
                 ContentContract.ContentEntry.TABLE_CONTENT + "(" +
-                ContentContract.ContentEntry._ID + "INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                ContentContract.ContentEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 ContentContract.ContentEntry.COLUMN_VERSION_NAME + " TEXT NOT NULL, " +
                 ContentContract.ContentEntry.COLUMN_DESCRIPTION + " TEXT NOT NULL, " +
                 ContentContract.ContentEntry.COLUMN_ICON + " INTEGER NOT NULL " + ");";

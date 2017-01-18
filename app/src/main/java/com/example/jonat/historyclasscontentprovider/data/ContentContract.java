@@ -1,4 +1,4 @@
-package com.example.jonat.historyclasscontentprovider;
+package com.example.jonat.historyclasscontentprovider.data;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -10,7 +10,7 @@ import android.provider.BaseColumns;
  */
 
 public class ContentContract {
-    public static final String CONTENT_AUTHORITY = "com.example.jonat.historyclasscontentprovider";
+    public static final String CONTENT_AUTHORITY = "com.example.jonat.historyclasscontentprovider.data";
     public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
     public static final class  ContentEntry implements BaseColumns{

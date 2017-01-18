@@ -21,6 +21,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <provider
+            android:authorities="com.example.jonat.historyclasscontentprovider.data"
+            android:name=".data.ContentsProvider"
+            android:exported="false"
+            android:syncable="true"/>
     </application>
 
 </manifest>
