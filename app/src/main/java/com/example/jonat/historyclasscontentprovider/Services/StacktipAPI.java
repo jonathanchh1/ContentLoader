@@ -13,6 +13,6 @@ import retrofit2.http.Query;
  */
 
 public interface StacktipAPI {
-    @GET("?json=get_recent_posts&count=50#")
-    Call<Stacktip> apiLoader(@Query("posts") String post);
+    @GET("?json=get_recent_posts&count=50#posts/0/")
+    Call<Stacktip> apiLoader(@Query("attachment") String posts);
 }

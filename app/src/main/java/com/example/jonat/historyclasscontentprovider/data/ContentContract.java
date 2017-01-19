@@ -17,6 +17,7 @@ public class ContentContract {
         //table name
         public static final String TABLE_CONTENT = "content";
         //columns
+
         public static final String _ID = "_id";
         public static final String COLUMN_ICON = "icon";
         public static final String COLUMN_DESCRIPTION = "description";

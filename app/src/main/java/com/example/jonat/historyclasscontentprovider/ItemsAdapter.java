@@ -12,6 +12,9 @@ import android.widget.TextView;
 
 import com.example.jonat.historyclasscontentprovider.data.ContentContract;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by jonat on 1/17/2017.
  */
@@ -20,6 +23,7 @@ public class ItemsAdapter extends CursorAdapter {
     private static final String LOG_TAG = ItemsAdapter.class.getSimpleName();
     private Context mContext;
     private static int sLoaderID;
+    private List<Items> itemsList;
 
     public static class ViewHolder {
         public final ImageView imageView;
@@ -38,6 +42,10 @@ public class ItemsAdapter extends CursorAdapter {
         sLoaderID = loaderID;
     }
 
+    public void updateList(List<Items> items){
+        this.itemsList = items;
+
+    }
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent){
         int layoutId = R.layout.content_items;

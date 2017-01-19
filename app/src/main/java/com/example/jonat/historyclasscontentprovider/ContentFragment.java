@@ -4,6 +4,7 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -16,7 +17,18 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
+import com.example.jonat.historyclasscontentprovider.Services.Stacktip;
+import com.example.jonat.historyclasscontentprovider.Services.StacktipAPI;
 import com.example.jonat.historyclasscontentprovider.data.ContentContract;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Created by jonat on 1/17/2017.
@@ -32,6 +44,9 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
     private static final int CURSOR_LOADER_ID = 0;
     //static value for our items
 
+    ArrayList<Items> itemsList;
+    private Items objectItems;
+   /**
     Items[] flavors = {
             new Items("Cupcake", "The first release of Android", R.drawable.cupcake),
             new Items ("Donut", "The world's information is at your fingertips – " +
@@ -57,6 +72,8 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
                     " screens big and small – with the right information at the right moment.",
                     R.drawable.lollipop)
     };
+
+    **/
 
     public ContentFragment(){
 
@@ -88,6 +105,8 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
         itemsAdapter = new ItemsAdapter(getActivity(), null, 0, CURSOR_LOADER_ID);
         //initialize mGridview to the gridView in the fragment_main.xml
 
+        itemsList = new ArrayList<>();
+
         mGridView = (GridView) rootView.findViewById(R.id.flavors_grid);
 
         mGridView.setAdapter(itemsAdapter);
@@ -112,10 +131,18 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
             }
         });
 
+        new ApiClient().execute();
         return rootView;
     }
 
     public void insertData() {
+
+        ContentValues values = new ContentValues();
+        values.put(ContentContract.ContentEntry.COLUMN_ICON, objectItems.getImage());
+        values.put(ContentContract.ContentEntry.COLUMN_DESCRIPTION, objectItems.getDescription());
+        values.put(ContentContract.ContentEntry.COLUMN_VERSION_NAME, objectItems.getTitle());
+
+        /**
         ContentValues[] items = new ContentValues[flavors.length];
         //Loop through static array of flavors, add each to an instance
         //in the array of ContentValues
@@ -125,10 +152,51 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
             items[i].put(ContentContract.ContentEntry.COLUMN_VERSION_NAME, flavors[i].name);
             items[i].put(ContentContract.ContentEntry.COLUMN_DESCRIPTION, flavors[i].description);
         }
-
+**/
         //bulkInsert out ContentValues.
-        getActivity().getContentResolver().bulkInsert(ContentContract.ContentEntry.CONTENT_URI,
-                items);
+        getActivity().getContentResolver().insert(ContentContract.ContentEntry.CONTENT_URI,
+                values);
+    }
+
+    public class ApiClient extends AsyncTask<String, String, List<Items>> {
+
+        public static final String BASE_URL = "http://stacktips.com/";
+
+        @Override
+        protected List<Items> doInBackground(String... params) {
+
+            if(params.length == 0){
+                return null;
+            }
+            String posts = params[0];
+
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+
+            StacktipAPI stacktipAPI = retrofit.create(StacktipAPI.class);
+            Call<Stacktip> itemsCall = stacktipAPI.apiLoader(posts);
+
+            try{
+                Response<Stacktip> response = itemsCall.execute();
+                Stacktip stacktip = response.body();
+                return stacktip.getItems();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(List<Items> items) {
+            if(items != null){
+                itemsList.addAll(items);
+                itemsAdapter.updateList(items);
+            }
+        }
     }
 
     @Override
