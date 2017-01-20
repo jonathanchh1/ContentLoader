@@ -7,57 +7,36 @@ import com.google.gson.annotations.SerializedName;
 
 /**
  * Created by jonat on 1/17/2017.
- */
-
-public class Items implements Parcelable {
-    @SerializedName("title")
-   private String title;
-
-    @SerializedName("description")
-   private String description;
-
-    @SerializedName("url")
+ */ public class Items {
     private String image;
+    private String description;
+    private String title;
 
-    protected Items(Parcel in) {
-        title = in.readString();
-        description = in.readString();
-        image = in.readString();
-    }
-
-    public static final Creator<Items> CREATOR = new Creator<Items>() {
-        @Override
-        public Items createFromParcel(Parcel in) {
-            return new Items(in);
-        }
-
-        @Override
-        public Items[] newArray(int size) {
-            return new Items[size];
-        }
-    };
-
-    public String getDescription() {
-        return description;
+    public Items() {
+        super();
     }
 
     public String getImage() {
         return image;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
     public String getTitle() {
         return title;
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(title);
-        dest.writeString(description);
-        dest.writeString(image);
+    public void setTitle(String title) {
+        this.title = title;
     }
 }

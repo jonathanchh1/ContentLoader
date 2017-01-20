@@ -11,7 +11,7 @@ import java.util.List;
  */
 
 public class Stacktip {
-    @SerializedName("posts")
+    @SerializedName("attachments")
     private List<Items> items = new ArrayList<>();
 
     public List<Items> getItems() {

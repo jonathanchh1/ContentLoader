@@ -2,6 +2,7 @@ package com.example.jonat.historyclasscontentprovider;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +24,10 @@ public class ItemsAdapter extends CursorAdapter {
     private static final String LOG_TAG = ItemsAdapter.class.getSimpleName();
     private Context mContext;
     private static int sLoaderID;
-    private List<Items> itemsList;
+    private List<Items> itemsList = new ArrayList<Items>();
+
+
+
 
     public static class ViewHolder {
         public final ImageView imageView;
@@ -42,9 +46,9 @@ public class ItemsAdapter extends CursorAdapter {
         sLoaderID = loaderID;
     }
 
-    public void updateList(List<Items> items){
-        this.itemsList = items;
-
+    public void updateList(List<Items> mGridData) {
+        this.itemsList = mGridData;
+        notifyDataSetChanged();
     }
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent){

@@ -14,7 +14,7 @@ public class ContentDBHelper extends SQLiteOpenHelper {
     public static final String LOG_TAG = ContentDBHelper.class.getSimpleName();
 
     //name & version
-    private static final String DATABASE_NAME = "items.db";
+    private static final String DATABASE_NAME = "contentex.db";
     private static final int DATABASE_VERSION = 12;
 
     public ContentDBHelper(Context context){

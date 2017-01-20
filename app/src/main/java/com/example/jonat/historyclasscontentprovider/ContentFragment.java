@@ -11,20 +11,35 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import com.example.jonat.historyclasscontentprovider.Services.Stacktip;
 import com.example.jonat.historyclasscontentprovider.Services.StacktipAPI;
 import com.example.jonat.historyclasscontentprovider.data.ContentContract;
+import com.loopj.android.http.HttpGet;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import cz.msebera.android.httpclient.HttpResponse;
+import cz.msebera.android.httpclient.client.HttpClient;
+import cz.msebera.android.httpclient.impl.client.DefaultHttpClient;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -43,9 +58,10 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
 
     private static final int CURSOR_LOADER_ID = 0;
     //static value for our items
+    private String FEED_URL = "http://stacktips.com/?json=get_recent_posts&count=45";
 
     ArrayList<Items> itemsList;
-    private Items objectItems;
+     Items objectItems;
    /**
     Items[] flavors = {
             new Items("Cupcake", "The first release of Android", R.drawable.cupcake),
@@ -89,7 +105,9 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
                         null);
         if(cursor.getCount() == 0){
             insertData();
+            new DownloadTask().execute(FEED_URL);
         }
+
         //initialize loader
         getLoaderManager().initLoader(CURSOR_LOADER_ID, null, this);
         super.onActivityCreated(savedInstanceState);
@@ -102,8 +120,9 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
         final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
         //initialize our ImageAdapter
-        itemsAdapter = new ItemsAdapter(getActivity(), null, 0, CURSOR_LOADER_ID);
         //initialize mGridview to the gridView in the fragment_main.xml
+
+        objectItems = new Items();
 
         itemsList = new ArrayList<>();
 
@@ -131,8 +150,15 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
             }
         });
 
-        new ApiClient().execute();
         return rootView;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        new DownloadTask().execute(FEED_URL);
+
     }
 
     public void insertData() {
@@ -154,48 +180,68 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
         }
 **/
         //bulkInsert out ContentValues.
-        getActivity().getContentResolver().insert(ContentContract.ContentEntry.CONTENT_URI,
-                values);
+        getActivity().getContentResolver().bulkInsert(ContentContract.ContentEntry.CONTENT_URI,
+                new ContentValues[]{values});
     }
+    public class DownloadTask extends AsyncTask<String, Void, Integer> {
 
-    public class ApiClient extends AsyncTask<String, String, List<Items>> {
-
-        public static final String BASE_URL = "http://stacktips.com/";
 
         @Override
-        protected List<Items> doInBackground(String... params) {
+        protected Integer doInBackground(String... params) {
+            Integer result = 0;
+            HttpURLConnection urlConnection;
+            try {
+                URL url = new URL(params[0]);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                int statusCode = urlConnection.getResponseCode();
 
-            if(params.length == 0){
-                return null;
+                // 200 represents HTTP OK
+                if (statusCode == 200) {
+                    BufferedReader r = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = r.readLine()) != null) {
+                        response.append(line);
+                    }
+                    parseResult(response.toString());
+                    result = 1; // Successful
+                } else {
+                    result = 0; //"Failed to fetch data!";
+                }
+            } catch (Exception e) {
+                Log.d(LOG_TAG, e.getLocalizedMessage());
             }
-            String posts = params[0];
-
-            Retrofit retrofit = new Retrofit.Builder()
-                    .baseUrl(BASE_URL)
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build();
-
-            StacktipAPI stacktipAPI = retrofit.create(StacktipAPI.class);
-            Call<Stacktip> itemsCall = stacktipAPI.apiLoader(posts);
-
-            try{
-                Response<Stacktip> response = itemsCall.execute();
-                Stacktip stacktip = response.body();
-                return stacktip.getItems();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return null;
+            return result; //"Failed to fetch data!";
         }
 
         @Override
-        protected void onPostExecute(List<Items> items) {
-            if(items != null){
-                itemsList.addAll(items);
-                itemsAdapter.updateList(items);
+        protected void onPostExecute(Integer result) {
+
+
+            if (result == 1) {
+                itemsAdapter = new ItemsAdapter( getActivity(),  null, 0, CURSOR_LOADER_ID);
+                mGridView.setAdapter(itemsAdapter);
+            } else {
+                Toast.makeText(getActivity(), "Failed to fetch data!", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+    private void parseResult(String result) {
+        try {
+            JSONObject response = new JSONObject(result);
+            JSONArray posts = response.optJSONArray("posts");
+            itemsList = new ArrayList<>();
+
+            for (int i = 0; i < posts.length(); i++) {
+                JSONObject post = posts.optJSONObject(i);
+                Items item = new Items();
+                item.setTitle(post.optString("title"));
+                item.setImage(post.optString("thumbnail"));
+                itemsList.add(item);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
@@ -219,11 +265,24 @@ public class ContentFragment extends Fragment implements LoaderManager.LoaderCal
     //Set the cursor in our CursorAdapter once the Cursor is loaded
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        itemsAdapter.swapCursor(data);
+        if(data.getCount() != 0){
+            itemsList.addAll(Utility.returnListFromCursor(data));
+
+        }
+
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        itemsAdapter.swapCursor(null);
+        clearDataSet();
     }
+
+
+    private void clearDataSet() {
+        if (itemsList != null) {
+            itemsList.clear();
+            itemsAdapter.notifyDataSetChanged();
+        }
+    }
+
 }
